@@ -1,30 +1,31 @@
-node {
-    def app
-
-    stage('Clone repository') {
-      
-
-        checkout scm
+pipeline {
+   agent any
+    environment {
+        DEOCKERHUB_CREDENTIALS = credentials('dockerhub')
     }
-
-    stage('Build image') {
-  
-       app = docker.build("brandonjones085/test")
-    }
-
-    stage('Test image') {
-  
-
-        app.inside {
-            sh 'echo "Tests passed"'
+    stages {
+        stage('CodeClone'){
+            steps {
+                git credentialsId: 'githibPassword', url: 'https://github.com/Nagy-Abdallah/docker-jenkins.git'
+            }
         }
-    }
-
-    stage('Push image') {
+        stage('BUILD'){
+            steps {
+                sh 'docker build -t nagyadel/jenkins_iti:${BUILD_NUMBER} .'
+            }
+        }
+        stage('Login'){
+            steps { 
+                sh 'echo $DEOCKERHUB_CREDENTIALS_PSW | docker login -u  $DEOCKERHUB_CREDENTIALS_USR --password-stdin'
+                sh 'echo LogedIn successfully!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+            }
+        }
+        stage('PUSH'){
+            steps {
+                sh 'docker push nagyadel/jenkins_iti:${BUILD_NUMBER}'
+            }
+        }
         
-        docker.withRegistry('https://registry.hub.docker.com', 'git') {
-            app.push("${env.BUILD_NUMBER}")
-            app.push("latest")
-        }
+        
     }
 }
